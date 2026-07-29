@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+            <item
+                android:id="@+id/nav_home"
+                android:title="Home"
+                android:icon="@drawable/ic_home" />
+
+            <item
+                android:id="@+id/nav_active_devices"
+                android:title="Active Devices"
+                android:icon="@drawable/ic_devices" />
+
+    <item
+        android:id="@+id/nav_profile"
+        android:title="Profile"
+        android:icon="@drawable/ic_menu_profile" />
+
+
+            <item
+                android:id="@+id/nav_terms_conditions"
+                android:title="Terms &amp; Conditions"
+                android:icon="@drawable/ic_terms_and_conditions" />
+
+            <item
+                android:id="@+id/nav_privacy_policy"
+                android:title="Privacy Policy"
+                android:icon="@drawable/ic_privacy_policy" />
+
+</menu>

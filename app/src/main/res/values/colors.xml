@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="purple_200">#FFBB86FC</color>
+    <color name="purple_500">#FF6200EE</color>
+    <color name="purple_700">#FF3700B3</color>
+    <color name="teal_200">#FF03DAC5</color>
+    <color name="teal_700">#FF018786</color>
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+
+    <!-- zinc Colors -->
+    <color name="zinc_50">#fafafa</color>
+    <color name="zinc_100">#f4f4f5</color>
+    <color name="zinc_200">#e4e4e7</color>
+    <color name="zinc_300">#d4d4d8</color>
+    <color name="zinc_400">#a1a1aa</color>
+    <color name="zinc_500">#71717a</color>
+    <color name="zinc_600">#52525b</color>
+    <color name="zinc_700">#3f3f46</color>
+    <color name="zinc_800">#27272a</color>
+    <color name="zinc_900">#18181b</color>
+    <color name="zinc_950">#09090b</color>
+
+    <!-- emerald colors-->
+    <color name="emerald_50">#ecfdf5</color>
+    <color name="emerald_100">#d1fae5</color>
+    <color name="emerald_200">#a7f3d0</color>
+    <color name="emerald_300">#6ee7b7</color>
+    <color name="emerald_400">#34d399</color>
+    <color name="emerald_500">#10b981</color>
+    <color name="emerald_600">#059669</color>
+    <color name="emerald_700">#047857</color>
+    <color name="emerald_800">#065f46</color>
+    <color name="emerald_900">#064e3b</color>
+    <color name="emerald_950">#022c22</color>
+</resources>
