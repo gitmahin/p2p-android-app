@@ -13,7 +13,7 @@
 
 
         <android.widget.Button
-            android:id="@+id/wifiEnableButton"
+            android:id="@+id/wifi_enable_button"
             android:layout_width="170dp"
             android:layout_height="170dp"
             android:background="@drawable/wifi_button"

@@ -1,29 +1,60 @@
 package com.example.crisistech;
 
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
-import android.graphics.drawable.Drawable;
+import android.content.IntentFilter;
+import android.net.wifi.WifiManager;
+import android.net.wifi.p2p.WifiP2pDevice;
+import android.net.wifi.p2p.WifiP2pDeviceList;
+import android.net.wifi.p2p.WifiP2pManager;
+import android.os.Build;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
 
-import androidx.activity.EdgeToEdge;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
-import androidx.core.graphics.Insets;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.fragment.app.Fragment;
 
 import com.google.android.material.navigation.NavigationView;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class MainActivity extends AppCompatActivity {
     DrawerLayout mainDrawableMenu;
     Button mainMenuOpenButton, mainMenuCloseButton;
     NavigationView mainNavigationView;
+
+    private WifiManager wifiManager;
+    private WifiP2pManager wifiP2pManager;
+    private WifiP2pManager.Channel wifiP2pChannel;
+
+    BroadcastReceiver broadcastReceiver;
+    IntentFilter intentFilter;
+
+    // Only ever one screen showing peers at a time; fragments register/unregister here.
+    private PeerListUpdateListener activePeerListener;
+
+    private final WifiP2pManager.PeerListListener peerListListener = new WifiP2pManager.PeerListListener() {
+        @Override
+        public void onPeersAvailable(WifiP2pDeviceList peers) {
+            Log.d("WifiDirect", "onPeersAvailable, raw count=" + peers.getDeviceList().size());
+            List<WifiP2pDevice> deviceList = new ArrayList<>(peers.getDeviceList());
+            if (activePeerListener != null) {
+                Log.d("WifiDirect", "Forwarding to activePeerListener");
+                activePeerListener.onPeersUpdated(deviceList);
+            } else {
+                Log.d("WifiDirect", "activePeerListener is NULL - fragment not registered!");
+            }
+        }
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -35,6 +66,51 @@ public class MainActivity extends AppCompatActivity {
         this.mainNavigationViewManager();
     }
 
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            ContextCompat.registerReceiver(this, broadcastReceiver, intentFilter,
+                    ContextCompat.RECEIVER_NOT_EXPORTED);
+        } else {
+            registerReceiver(broadcastReceiver, intentFilter);
+        }
+        Log.d("WifiDirect", "Receiver registered in onResume");
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        unregisterReceiver(broadcastReceiver);
+    }
+
+    /** Called by DevicesFragment when it becomes visible. */
+    public void registerPeerListListener(PeerListUpdateListener listener) {
+        this.activePeerListener = listener;
+    }
+
+    /** Called by DevicesFragment in onPause so a dead fragment never gets called back. */
+    public void unregisterPeerListListener(PeerListUpdateListener listener) {
+        if (this.activePeerListener == listener) {
+            this.activePeerListener = null;
+        }
+    }
+
+    /** Called by the broadcast receiver when peers change. */
+    void requestPeers() {
+        if (wifiP2pManager != null) {
+            wifiP2pManager.requestPeers(wifiP2pChannel, peerListListener);
+        }
+    }
+
+    public WifiP2pManager getWifiP2pManager() {
+        return wifiP2pManager;
+    }
+
+    public WifiP2pManager.Channel getWifiP2pChannel() {
+        return wifiP2pChannel;
+    }
+
     private void init() {
         mainDrawableMenu = findViewById(R.id.mainMenuDrawerLayout);
         mainMenuOpenButton = findViewById(R.id.menu_open_button);
@@ -42,33 +118,34 @@ public class MainActivity extends AppCompatActivity {
 
         View headerView = mainNavigationView.getHeaderView(0);
         mainMenuCloseButton = headerView.findViewById(R.id.main_menu_close_button);
+
+        wifiManager = (WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE);
+
+        wifiP2pManager = (WifiP2pManager) getSystemService(Context.WIFI_P2P_SERVICE);
+        wifiP2pChannel = wifiP2pManager.initialize(this, getMainLooper(), () -> {
+            Log.e("WifiDirect", "Channel disconnected!");
+        });
+
+        broadcastReceiver = new WifiBroadcastReciever(this);
+
+        intentFilter = new IntentFilter();
+        intentFilter.addAction(WifiP2pManager.WIFI_P2P_STATE_CHANGED_ACTION);
+        intentFilter.addAction(WifiP2pManager.WIFI_P2P_PEERS_CHANGED_ACTION);
+        intentFilter.addAction(WifiP2pManager.WIFI_P2P_CONNECTION_CHANGED_ACTION);
+        intentFilter.addAction(WifiP2pManager.WIFI_P2P_THIS_DEVICE_CHANGED_ACTION);
     }
 
     private void mainMenuManager() {
-        mainMenuOpenButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                mainDrawableMenu.open();
-            }
-        });
-
-        mainMenuCloseButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                mainDrawableMenu.close();
-            }
-        });
+        mainMenuOpenButton.setOnClickListener(v -> mainDrawableMenu.open());
+        mainMenuCloseButton.setOnClickListener(v -> mainDrawableMenu.close());
     }
 
-
     private void mainNavigationViewManager() {
-
         mainNavigationView.setNavigationItemSelectedListener(new NavigationView.OnNavigationItemSelectedListener() {
             @Override
             public boolean onNavigationItemSelected(@NonNull MenuItem menuItem) {
                 int itemId = menuItem.getItemId();
                 Fragment fragment = new HomeFragment();
-                ;
 
                 if (itemId == R.id.nav_home) {
                     fragment = new HomeFragment();
@@ -90,11 +167,9 @@ public class MainActivity extends AppCompatActivity {
                     Toast.makeText(MainActivity.this, "Privacy Policy", Toast.LENGTH_SHORT).show();
                 }
 
-
                 getSupportFragmentManager().beginTransaction()
                         .replace(R.id.fragmentContainer, fragment)
                         .commit();
-
 
                 mainDrawableMenu.close();
                 return true;
