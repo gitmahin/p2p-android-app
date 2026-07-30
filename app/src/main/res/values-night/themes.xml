@@ -7,6 +7,7 @@
         <item name="colorOnPrimary">@color/zinc_50</item>
 
         <!-- Status bar color. -->
+        <item name="statusBarBackground">@android:color/transparent</item>
         <item name="android:statusBarColor">?attr/colorPrimaryVariant</item>
         <!-- Other -->
         <item name="android:windowBackground">@color/zinc_950</item>

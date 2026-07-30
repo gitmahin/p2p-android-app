@@ -3,25 +3,58 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/mainMenuDrawerLayout"
-    tools:openDrawer="start"
-    android:fitsSystemWindows="true"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-
     android:layout_gravity="start"
-    tools:context=".MainActivity">
+    android:fitsSystemWindows="true"
 
-    <include layout="@layout/activity_home"  />
+    tools:context=".MainActivity"
+    tools:openDrawer="start">
+
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <Button
+            android:id="@+id/menu_open_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:drawableLeft="@drawable/ic_sidebar_open"
+            android:drawableTint="@color/zinc_400"
+            android:gravity="start"
+            android:text="Open Menu"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.061"
+            app:layout_constraintStart_toStartOf="parent"
+
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <FrameLayout
+            android:id="@+id/fragmentContainer"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="1.0"
+            app:layout_constraintStart_toStartOf="parent"
+
+            app:layout_constraintTop_toTopOf="parent">
+
+        </FrameLayout>
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
 
     <com.google.android.material.navigation.NavigationView
+        android:id="@+id/main_navigation_view"
         android:layout_width="wrap_content"
         android:layout_height="match_parent"
-        app:headerLayout="@layout/main_menu_header"
-        app:menu="@menu/main_menu"
-        android:background="@color/zinc_900"
-        app:itemIconSize="18dp"
         android:layout_gravity="start"
-        />
+        android:background="@color/zinc_900"
+        app:headerLayout="@layout/main_menu_header"
+        app:itemIconSize="18dp"
+        app:menu="@menu/main_menu" />
 
 
 </androidx.drawerlayout.widget.DrawerLayout>
