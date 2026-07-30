@@ -22,22 +22,26 @@ import com.google.android.material.navigation.NavigationView;
 
 public class MainActivity extends AppCompatActivity {
     DrawerLayout mainDrawableMenu;
-    Button mainMenuOpenButton;
-
+    Button mainMenuOpenButton, mainMenuCloseButton;
     NavigationView mainNavigationView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
         setContentView(R.layout.activity_main);
 
+        this.init();
+        this.mainMenuManager();
+        this.mainNavigationViewManager();
+    }
+
+    private void init() {
         mainDrawableMenu = findViewById(R.id.mainMenuDrawerLayout);
         mainMenuOpenButton = findViewById(R.id.menu_open_button);
         mainNavigationView = findViewById(R.id.main_navigation_view);
 
-        this.mainMenuManager();
-        this.mainNavigationViewManager();
+        View headerView = mainNavigationView.getHeaderView(0);
+        mainMenuCloseButton = headerView.findViewById(R.id.main_menu_close_button);
     }
 
     private void mainMenuManager() {
@@ -48,7 +52,12 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-
+        mainMenuCloseButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                mainDrawableMenu.close();
+            }
+        });
     }
 
 
@@ -70,7 +79,7 @@ public class MainActivity extends AppCompatActivity {
                 }
 
                 if (itemId == R.id.nav_active_devices) {
-                    Toast.makeText(MainActivity.this, "Active Devices", Toast.LENGTH_SHORT).show();
+                    fragment = new DevicesFragment();
                 }
 
                 if (itemId == R.id.nav_terms_conditions) {
