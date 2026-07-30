@@ -1,8 +1,10 @@
 package com.example.crisistech;
 
 import android.Manifest;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.net.wifi.p2p.WifiP2pDevice;
+import android.net.wifi.p2p.WifiP2pInfo;
 import android.net.wifi.p2p.WifiP2pManager;
 import android.os.Build;
 import android.os.Bundle;
@@ -23,14 +25,18 @@ import android.widget.Button;
 import android.widget.ListView;
 import android.widget.Toast;
 
+import java.util.ArrayList;
 import java.util.List;
 
-public class DevicesFragment extends Fragment implements PeerListUpdateListener {
+public class DevicesFragment extends Fragment implements PeerListUpdateListener, ConnectionInfoListener {
 
     ListView devicesListView;
     Button searchActiveDevices;
 
     private ActivityResultLauncher<String[]> permissionLauncher;
+
+    // Keep the actual device list so item taps map back to a real WifiP2pDevice.
+    private final List<WifiP2pDevice> currentPeers = new ArrayList<>();
 
     public DevicesFragment() {
         // Required empty public constructor
@@ -67,18 +73,25 @@ public class DevicesFragment extends Fragment implements PeerListUpdateListener 
     @Override
     public void onResume() {
         super.onResume();
-        ((MainActivity) requireActivity()).registerPeerListListener(this);
+        MainActivity activity = (MainActivity) requireActivity();
+        activity.registerPeerListListener(this);
+        activity.registerConnectionInfoListener(this);
     }
 
     @Override
     public void onPause() {
         super.onPause();
-        ((MainActivity) requireActivity()).unregisterPeerListListener(this);
+        MainActivity activity = (MainActivity) requireActivity();
+        activity.unregisterPeerListListener(this);
+        activity.unregisterConnectionInfoListener(this);
     }
 
     @Override
     public void onPeersUpdated(List<WifiP2pDevice> peers) {
         Log.d("WifiDirect", "Peers updated, count=" + peers.size());
+
+        currentPeers.clear();
+        currentPeers.addAll(peers);
 
         if (peers.isEmpty()) {
             Toast.makeText(requireContext(), "No Device found", Toast.LENGTH_SHORT).show();
@@ -86,12 +99,31 @@ public class DevicesFragment extends Fragment implements PeerListUpdateListener 
 
         String[] deviceNames = new String[peers.size()];
         for (int i = 0; i < peers.size(); i++) {
-            deviceNames[i] = peers.get(i).deviceName;
+            deviceNames[i] = peers.get(i).deviceName + " (" + peers.get(i).status() + ")";
         }
 
         ArrayAdapter<String> adapter = new ArrayAdapter<>(
                 requireContext().getApplicationContext(), android.R.layout.simple_list_item_1, deviceNames);
         devicesListView.setAdapter(adapter);
+
+        devicesListView.setOnItemClickListener((parent, view, position, id) -> {
+            WifiP2pDevice selected = currentPeers.get(position);
+            Toast.makeText(requireContext(), "Connecting to " + selected.deviceName, Toast.LENGTH_SHORT).show();
+            ((MainActivity) requireActivity()).connectToDevice(selected);
+        });
+    }
+
+    @Override
+    public void onConnectionInfoAvailable(WifiP2pInfo info) {
+        if (!info.groupFormed) return;
+
+        // Launch the chat screen once the P2P group is actually formed.
+        Intent intent = new Intent(requireContext(), ChatActivity.class);
+        intent.putExtra(ChatActivity.EXTRA_IS_GROUP_OWNER, info.isGroupOwner);
+        if (info.groupOwnerAddress != null) {
+            intent.putExtra(ChatActivity.EXTRA_HOST_ADDRESS, info.groupOwnerAddress.getHostAddress());
+        }
+        startActivity(intent);
     }
 
     private void init(View view) {
@@ -101,10 +133,8 @@ public class DevicesFragment extends Fragment implements PeerListUpdateListener 
         searchActiveDevices.setOnClickListener(v -> {
             Log.d("WifiDirect", "Search button clicked");
             if (hasRequiredPermissions()) {
-                Log.d("WifiDirect", "Permissions OK, starting discovery");
                 startDiscovery();
             } else {
-                Log.d("WifiDirect", "Missing permissions, requesting");
                 requestRequiredPermissions();
             }
         });
@@ -143,20 +173,12 @@ public class DevicesFragment extends Fragment implements PeerListUpdateListener 
         manager.discoverPeers(channel, new WifiP2pManager.ActionListener() {
             @Override
             public void onFailure(int reason) {
-                String reasonStr;
-                switch (reason) {
-                    case WifiP2pManager.P2P_UNSUPPORTED: reasonStr = "P2P_UNSUPPORTED"; break;
-                    case WifiP2pManager.ERROR: reasonStr = "ERROR"; break;
-                    case WifiP2pManager.BUSY: reasonStr = "BUSY"; break;
-                    default: reasonStr = "UNKNOWN:" + reason;
-                }
-                Log.e("WifiDirect", "discoverPeers FAILED: " + reasonStr);
+                Log.e("WifiDirect", "discoverPeers FAILED: " + reason);
                 searchActiveDevices.setText("Searching Failed");
             }
 
             @Override
             public void onSuccess() {
-                Log.d("WifiDirect", "discoverPeers onSuccess - discovery initiated");
                 searchActiveDevices.setText("Searching...");
             }
         });

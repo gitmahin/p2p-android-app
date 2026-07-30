@@ -7,6 +7,7 @@ import android.content.IntentFilter;
 import android.net.wifi.WifiManager;
 import android.net.wifi.p2p.WifiP2pDevice;
 import android.net.wifi.p2p.WifiP2pDeviceList;
+import android.net.wifi.p2p.WifiP2pInfo;
 import android.net.wifi.p2p.WifiP2pManager;
 import android.os.Build;
 import android.os.Bundle;
@@ -39,8 +40,8 @@ public class MainActivity extends AppCompatActivity {
     BroadcastReceiver broadcastReceiver;
     IntentFilter intentFilter;
 
-    // Only ever one screen showing peers at a time; fragments register/unregister here.
     private PeerListUpdateListener activePeerListener;
+    private ConnectionInfoListener activeConnectionListener;
 
     private final WifiP2pManager.PeerListListener peerListListener = new WifiP2pManager.PeerListListener() {
         @Override
@@ -48,10 +49,7 @@ public class MainActivity extends AppCompatActivity {
             Log.d("WifiDirect", "onPeersAvailable, raw count=" + peers.getDeviceList().size());
             List<WifiP2pDevice> deviceList = new ArrayList<>(peers.getDeviceList());
             if (activePeerListener != null) {
-                Log.d("WifiDirect", "Forwarding to activePeerListener");
                 activePeerListener.onPeersUpdated(deviceList);
-            } else {
-                Log.d("WifiDirect", "activePeerListener is NULL - fragment not registered!");
             }
         }
     };
@@ -75,7 +73,6 @@ public class MainActivity extends AppCompatActivity {
         } else {
             registerReceiver(broadcastReceiver, intentFilter);
         }
-        Log.d("WifiDirect", "Receiver registered in onResume");
     }
 
     @Override
@@ -84,16 +81,20 @@ public class MainActivity extends AppCompatActivity {
         unregisterReceiver(broadcastReceiver);
     }
 
-    /** Called by DevicesFragment when it becomes visible. */
     public void registerPeerListListener(PeerListUpdateListener listener) {
         this.activePeerListener = listener;
     }
 
-    /** Called by DevicesFragment in onPause so a dead fragment never gets called back. */
     public void unregisterPeerListListener(PeerListUpdateListener listener) {
-        if (this.activePeerListener == listener) {
-            this.activePeerListener = null;
-        }
+        if (this.activePeerListener == listener) this.activePeerListener = null;
+    }
+
+    public void registerConnectionInfoListener(ConnectionInfoListener listener) {
+        this.activeConnectionListener = listener;
+    }
+
+    public void unregisterConnectionInfoListener(ConnectionInfoListener listener) {
+        if (this.activeConnectionListener == listener) this.activeConnectionListener = null;
     }
 
     /** Called by the broadcast receiver when peers change. */
@@ -101,6 +102,37 @@ public class MainActivity extends AppCompatActivity {
         if (wifiP2pManager != null) {
             wifiP2pManager.requestPeers(wifiP2pChannel, peerListListener);
         }
+    }
+
+    /** Called by the broadcast receiver when connection state changes. */
+    void requestConnectionInfo() {
+        if (wifiP2pManager == null) return;
+        wifiP2pManager.requestConnectionInfo(wifiP2pChannel, info -> {
+            Log.d("WifiDirect", "connectionInfo: groupFormed=" + info.groupFormed
+                    + " isGroupOwner=" + info.isGroupOwner);
+            if (activeConnectionListener != null) {
+                activeConnectionListener.onConnectionInfoAvailable(info);
+            }
+        });
+    }
+
+    /** Used by DevicesFragment to initiate a connection to a chosen peer. */
+    public void connectToDevice(WifiP2pDevice device) {
+        android.net.wifi.p2p.WifiP2pConfig config = new android.net.wifi.p2p.WifiP2pConfig();
+        config.deviceAddress = device.deviceAddress;
+
+        wifiP2pManager.connect(wifiP2pChannel, config, new WifiP2pManager.ActionListener() {
+            @Override
+            public void onSuccess() {
+                Log.d("WifiDirect", "connect() onSuccess - waiting for connection broadcast");
+            }
+
+            @Override
+            public void onFailure(int reason) {
+                Log.e("WifiDirect", "connect() FAILED: " + reason);
+                Toast.makeText(MainActivity.this, "Connection failed", Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 
     public WifiP2pManager getWifiP2pManager() {
@@ -122,9 +154,8 @@ public class MainActivity extends AppCompatActivity {
         wifiManager = (WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE);
 
         wifiP2pManager = (WifiP2pManager) getSystemService(Context.WIFI_P2P_SERVICE);
-        wifiP2pChannel = wifiP2pManager.initialize(this, getMainLooper(), () -> {
-            Log.e("WifiDirect", "Channel disconnected!");
-        });
+        wifiP2pChannel = wifiP2pManager.initialize(this, getMainLooper(), () ->
+                Log.e("WifiDirect", "Channel disconnected!"));
 
         broadcastReceiver = new WifiBroadcastReciever(this);
 
@@ -147,22 +178,13 @@ public class MainActivity extends AppCompatActivity {
                 int itemId = menuItem.getItemId();
                 Fragment fragment = new HomeFragment();
 
-                if (itemId == R.id.nav_home) {
-                    fragment = new HomeFragment();
-                }
-
-                if (itemId == R.id.nav_profile) {
-                    fragment = new ProfileFragment();
-                }
-
-                if (itemId == R.id.nav_active_devices) {
-                    fragment = new DevicesFragment();
-                }
+                if (itemId == R.id.nav_home) fragment = new HomeFragment();
+                if (itemId == R.id.nav_profile) fragment = new ProfileFragment();
+                if (itemId == R.id.nav_active_devices) fragment = new DevicesFragment();
 
                 if (itemId == R.id.nav_terms_conditions) {
                     Toast.makeText(MainActivity.this, "Terms & Conditions", Toast.LENGTH_SHORT).show();
                 }
-
                 if (itemId == R.id.nav_privacy_policy) {
                     Toast.makeText(MainActivity.this, "Privacy Policy", Toast.LENGTH_SHORT).show();
                 }
