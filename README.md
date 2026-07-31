@@ -10,11 +10,11 @@ An offline peer-to-peer messaging application for Android using Android Wi-Fi Di
 
 This project was built in just 2 days, so I couldn't implement everything I had planned. Here are some of the features I wanted to add:
 
-## User Profiles
+### User Profiles
 - Save the user's name and contact information in local phone storage.
 - Exchange profile information automatically when users connect, so chats display real names instead of only device information.
 
-## Offline AI Incident Detection (TensorFlow Lite)
+### Offline AI Incident Detection (TensorFlow Lite)
 - Integrate a local TensorFlow Lite model trained using MobileNet/ImageNet with a custom incident dataset.
 - When a user uploads an incident photo, the model would classify it as High, Medium, Low, or Safe risk.
 
@@ -23,13 +23,13 @@ This project was built in just 2 days, so I couldn't implement everything I had 
 - Risk label
 - Incident summary (provided by the user)
 
-## Smart P2P Data Synchronization Since a Wi-Fi Direct group has one host and multiple clients, the synchronization logic was designed as follows:
+### Smart P2P Data Synchronization Since a Wi-Fi Direct group has one host and multiple clients, the synchronization logic was designed as follows:
 - If the host creates a message or incident report, it broadcasts the data to all connected clients.
 - If a client creates a report, it first sends the data to the host.
 - The host then redistributes that data to every connected client, ensuring everyone stays synchronized.
 - To prevent duplicate messages or reports during synchronization, every piece of data would be assigned a UUID, allowing devices to identify and ignore already-synced content.
 
-## Multi-Group Networking: 
+### Multi-Group Networking: 
 Another feature I planned was overcoming the limitations of Wi-Fi Direct. Since Wi-Fi Direct groups are isolated and cannot communicate with other groups directly, I planned to implement a bridge-node architecture. In this design, two devices from different Wi-Fi Direct groups would connect to each other over Bluetooth and relay data between the groups. This would effectively chain multiple Wi-Fi Direct groups together, creating a larger mesh-like offline network instead of being limited to a single group.
 
 There are many tricky edge cases and networking challenges involved in making this work reliably. Unfortunately, I couldn't complete all of these features because the entire project had to be built within just two days.
