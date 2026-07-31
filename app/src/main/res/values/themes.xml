@@ -2,15 +2,14 @@
     <!-- Base application theme. -->
     <style name="Theme.CrisisTech" parent="Theme.Material3.DayNight.NoActionBar">
         <!-- Primary brand color. -->
-        <item name="colorPrimary">@color/zinc_200</item>
-        <item name="colorPrimaryVariant">@color/zinc_700</item>
-        <item name="colorOnPrimary">@color/zinc_950</item>
+        <item name="colorPrimary">@color/zinc_900</item>
+        <item name="colorPrimaryVariant">@color/zinc_900</item>
+        <item name="colorOnPrimary">@color/zinc_50</item>
 
-
-        <item name="statusBarBackground">@android:color/transparent</item>
         <!-- Status bar color. -->
+        <item name="statusBarBackground">@android:color/transparent</item>
         <item name="android:statusBarColor">?attr/colorPrimaryVariant</item>
         <!-- Other -->
-        <item name="android:windowBackground">@color/zinc_50</item>
+        <item name="android:windowBackground">@color/zinc_950</item>
     </style>
 </resources>

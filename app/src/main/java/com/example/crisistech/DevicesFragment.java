@@ -86,6 +86,17 @@ public class DevicesFragment extends Fragment implements PeerListUpdateListener,
         activity.unregisterConnectionInfoListener(this);
     }
 
+    private String deviceStatus(int status) {
+        switch (status) {
+            case WifiP2pDevice.AVAILABLE: return "Available";
+            case WifiP2pDevice.INVITED: return "Invited";
+            case WifiP2pDevice.CONNECTED: return "Connected";
+            case WifiP2pDevice.FAILED: return "Failed";
+            case WifiP2pDevice.UNAVAILABLE: return "Unavailable";
+            default: return "Unknown";
+        }
+    }
+
     @Override
     public void onPeersUpdated(List<WifiP2pDevice> peers) {
         Log.d("WifiDirect", "Peers updated, count=" + peers.size());
@@ -99,7 +110,7 @@ public class DevicesFragment extends Fragment implements PeerListUpdateListener,
 
         String[] deviceNames = new String[peers.size()];
         for (int i = 0; i < peers.size(); i++) {
-            deviceNames[i] = peers.get(i).deviceName + " (" + peers.get(i).status() + ")";
+            deviceNames[i] = peers.get(i).deviceName + " (" + deviceStatus(peers.get(i).status) + ")";
         }
 
         ArrayAdapter<String> adapter = new ArrayAdapter<>(
